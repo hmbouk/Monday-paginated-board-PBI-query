@@ -1,0 +1,77 @@
+let 
+    	/* The Monday.com API dated 2023-10 changed the way rows of data are returned from boards.  You now have to call for 1 page of data
+    	at a time and also request the cursor which points to the next page of data.  If the cursor is null there are no more pages of data.
+    	The maximum number of rows per page is configurable with the maximum allow of 100 rows of data.  The following query attempts to 
+    	request five pages of 100 rows of data.  If you expect more than 500 rows of data then additional page requests need to be added below. */
+    	
+    	
+    	/* Define the Monday.com board ID number then call the GetBoard_1stPage function to return the first 100 rows of data */
+    	/* Update the Column1.cursor column if the value is null and replace with NoMorePages  */
+    	/* Assign the value found in the Column1.cursor column to the 2nd_page_cursor variable */
+    
+    BoardID = 1234567890,
+    #"1st_Page_Table" = GetBoard_1stPage(BoardID),
+    #"1st_Page_Table_Updated" = Table.ReplaceValue(#"1st_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    #"2nd_page_cursor" = #"1st_Page_Table_Updated"{0}[Column1.cursor],
+
+		/* If the 2nd_page_cursor value is not equal to NoMorePages then call the GetBoard_RemainingPages function to get the next page of 100 rows of data */
+		/* If the cursor value is NoMorePages then call the EmptyIssuesTable to create an empty table with the correct column names */
+		/* Update the Column1.cursor column if the value is null and replace with NoMorePages  */
+		/* Assign the value found in the Column1.cursor column to the 3rd_page_cursor variable */
+
+
+    #"2nd_Page_Table" = if #"2nd_page_cursor" <> "NoMorePages" then GetBoard_RemainingPages(#"2nd_page_cursor") else EmptyTable(),
+    #"2nd_Page_Table_Updated" = Table.ReplaceValue(#"2nd_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    #"3rd_page_cursor" = #"2nd_Page_Table_Updated"{0}[Column1.cursor],
+
+		/* If the 3rd_page_cursor value is not equal to NoMorePages then call the GetBoard_RemainingPages function to get the next page of 100 rows of data */
+		/* If the cursor value is NoMorePages then call the EmptyIssuesTable to create an empty table with the correct column names */
+		/* Update the Column1.cursor column if the value is null and replace with NoMorePages  */
+		/* Assign the value found in the Column1.cursor column to the 4th_page_cursor variable */
+
+
+    #"3rd_Page_Table" = if #"3rd_page_cursor" <> "NoMorePages" then GetBoard_RemainingPages(#"3rd_page_cursor") else EmptyTable(),
+    #"3rd_Page_Table_Updated" = Table.ReplaceValue(#"3rd_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    #"4th_page_cursor" = #"3rd_Page_Table_Updated"{0}[Column1.cursor],
+
+		/* If the 4th_page_cursor value is not equal to NoMorePages then call the GetBoard_RemainingPages function to get the next page of 100 rows of data */
+		/* If the cursor value is NoMorePages then call the EmptyIssuesTable to create an empty table with the correct column names */
+		/* Update the Column1.cursor column if the value is null and replace with NoMorePages  */
+		/* Assign the value found in the Column1.cursor column to the 5th_page_cursor variable */
+
+
+    #"4th_Page_Table" = if #"4th_page_cursor" <> "NoMorePages" then GetBoard_RemainingPages(#"4th_page_cursor") else EmptyTable(),
+    #"4th_Page_Table_Updated" = Table.ReplaceValue(#"4th_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    #"5th_page_cursor" = #"4th_Page_Table_Updated"{0}[Column1.cursor],
+
+		/* If the 5th_page_cursor value is not equal to NoMorePages then call the GetBoard_RemainingPages function to get the next page of 100 rows of data */
+		/* If the cursor value is NoMorePages then call the EmptyIssuesTable to create an empty table with the correct column names */
+		/* Update the Column1.cursor column if the value is null and replace with NoMorePages  */
+		/* Assign the value found in the Column1.cursor column to the 6th_page_cursor variable */
+
+
+    #"5th_Page_Table" = if #"5th_page_cursor" <> "NoMorePages" then GetBoard_RemainingPages(#"5th_page_cursor") else EmptyTable(),
+    #"5th_Page_Table_Updated" = Table.ReplaceValue(#"5th_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    #"6th_page_cursor" = #"5th_Page_Table_Updated"{0}[Column1.cursor],
+
+		/* If you need to load more than 500 rows of data then duplicate the three lines above and modify the variable names.  You will also need to add the new variable in the Table.Combine function below */
+		/*  E.G.
+		
+		    #"6th_Page_Table" = if #"6th_page_cursor" <> "NoMorePages" then GetBoard_RemainingPages(#"6th_page_cursor") else EmptyTable(),
+    		#"6th_Page_Table_Updated" = Table.ReplaceValue(#"6th_Page_Table",null,"NoMorePages",Replacer.ReplaceValue,{"Column1.cursor"}),
+    		#"7th_page_cursor" = #"6th_Page_Table_Updated"{0}[Column1.cursor],
+		*/
+
+
+		/* Combine the five tables contained in #"1st_Page_Table_Updated", #"2nd_Page_Table_Updated", #"3rd_Page_Table_Updated", #"4th_Page_Table_Updated", #"5th_Page_Table_Updated" */
+		/* Keep all columns except the Column1.cursor and Column1.items.id columns.  These two columns are not needed.  */
+		/* Rename the Column1.items.name to Topic */
+		/* Remove the empty rows that were due to any empty tables. */
+
+
+    Combined_Table1 = Table.Combine({#"1st_Page_Table_Updated", #"2nd_Page_Table_Updated", #"3rd_Page_Table_Updated", #"4th_Page_Table_Updated", #"5th_Page_Table_Updated"}),    // add additional table variables if more than 500 rows of data
+    #"Removed Other Columns" = Table.SelectColumns(Combined_Table1,{"Column1.items.name", "Reported By", "Created Date", "AssignedTo", "State", "Priority", "Issue Category", "Due Date", "Description", "Resolution", "Resolved Date", "Project Name"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Removed Other Columns",{{"Column1.items.name", "Item"}}),
+    #"Filtered Rows" = Table.SelectRows(#"Renamed Columns", each [Item] <> null and [Item] <> "")
+in
+    #"Filtered Rows"

@@ -1,0 +1,38 @@
+let
+    Source = (BoardID as number) =>
+let
+    MondayQuery1 = "{""query"": ""{boards(ids: ",
+    MondayQuery2 = Number.ToText(BoardID),
+    MondayQuery3 = ") {items_page(limit: 100) {cursor items {id name column_values {text column {title}}}}}}""}",
+    MondayFullQuery = MondayQuery1 & MondayQuery2 & MondayQuery3,
+    Source = Web.Contents("https://api.monday.com/", 
+        [
+            RelativePath="v2",
+            Headers=
+            [
+                #"Method"="POST", 
+                #"Content-Type"="application/json", 
+                #"Authorization"="eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjI1NTUwMDU0NywiYWFpIjoxMSwidWlkIjo0MzAyNDk2MiwiaWFkIjoiMjAyMy0wNS0wOVQyMzowMzowMC42NTdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTI0Mjc4NzUsInJnbiI6InVzZTEifQ.4DN9PXL0bhfbGNQ82I-Mcar-huskws2kQtuKqqpR4z0", 
+                #"API-Version"="2023-10"
+            ],
+            Content=Text.ToBinary(MondayFullQuery)
+        ]
+        ),
+    #"JSON" = Json.Document(Source, 65001),
+    data = JSON[data],
+    boards = data[boards],
+    #"Converted to Table" = Table.FromList(boards, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Expanded Column1" = Table.ExpandRecordColumn(#"Converted to Table", "Column1", {"items_page"}, {"Column1.items_page"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Expanded Column1",{{"Column1.items_page", "Column1"}}),
+    #"Expanded Column2" = Table.ExpandRecordColumn(#"Renamed Columns", "Column1", {"cursor", "items"}, {"Column1.cursor", "Column1.items"}),
+    #"Expanded Column1.items" = Table.ExpandListColumn(#"Expanded Column2", "Column1.items"),
+    #"Expanded Column1.items1" = Table.ExpandRecordColumn(#"Expanded Column1.items", "Column1.items", {"id", "name", "column_values"}, {"Column1.items.id", "Column1.items.name", "Column1.items.column_values"}),
+    #"Expanded Column1.items.column_values" = Table.ExpandListColumn(#"Expanded Column1.items1", "Column1.items.column_values"),
+    #"Expanded Column1.items.column_values1" = Table.ExpandRecordColumn(#"Expanded Column1.items.column_values", "Column1.items.column_values", {"text", "column"}, {"Column1.items.column_values.text", "Column1.items.column_values.column"}),
+    #"Expanded Column1.items.column_values.column" = Table.ExpandRecordColumn(#"Expanded Column1.items.column_values1", "Column1.items.column_values.column", {"title"}, {"Column1.items.column_values.column.title"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Column1.items.column_values.column",{{"Column1.items.column_values.column.title", type text}}),
+    #"Pivoted Column" = Table.Pivot(#"Changed Type", List.Distinct(#"Changed Type"[Column1.items.column_values.column.title]), "Column1.items.column_values.column.title", "Column1.items.column_values.text")
+in
+    #"Pivoted Column"
+in
+    Source

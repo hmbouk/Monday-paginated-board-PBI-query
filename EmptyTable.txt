@@ -1,0 +1,13 @@
+let
+    Source = () =>
+let
+  Source = #table(
+    {"Column1.cursor","Column1.items.id","Column1.items.name", "Reported By", "Created Date", "AssignedTo", "State", "Priority", "Issue Category", "Due Date", "Description", "Resolution", "Resolved Date", "Project Name"},
+    {
+      {Text.From(null),"","", "", "", "", "", "", "", "", "", "", "", ""}
+    }
+  )
+in
+  Source
+in
+    Source
