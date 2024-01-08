@@ -12,7 +12,7 @@ let
             [
                 #"Method"="POST", 
                 #"Content-Type"="application/json", 
-                #"Authorization"="eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjI1NTUwMDU0NywiYWFpIjoxMSwidWlkIjo0MzAyNDk2MiwiaWFkIjoiMjAyMy0wNS0wOVQyMzowMzowMC42NTdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTI0Mjc4NzUsInJnbiI6InVzZTEifQ.4DN9PXL0bhfbGNQ82I-Mcar-huskws2kQtuKqqpR4z0", 
+                #"Authorization"="YOUR API TOKEN", 
                 #"API-Version"="2023-10"
             ],
             Content=Text.ToBinary(MondayFull2ndQuery)
